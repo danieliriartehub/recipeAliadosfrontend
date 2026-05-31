@@ -1,11 +1,9 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
-import { CheckCircle2, LogOut, QrCode, ShieldCheck } from 'lucide-react'
+import { CheckCircle2, LogOut, ShieldCheck } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import {
-  validateQrForOperator,
-  registerRecyclingDelivery,
-} from '@/lib/api'
+import { validateQrForOperator, registerRecyclingDelivery } from '@/lib/api'
+import { QrScanner } from '@/components/QrScanner'
 
 export const Route = createFileRoute('/dashboard/operador')({
   component: OperadorDashboard,
@@ -36,11 +34,11 @@ const MATERIALS = [
 function OperadorDashboard() {
   const navigate = useNavigate()
 
-  // ── Estado del validador ──────────────────────────────────────
+  // ── Validador ─────────────────────────────────────────────────
   const [validatorId, setValidatorId] = useState<string | null>(null)
   const [validator, setValidator] = useState<ValidatorInfo | null>(null)
 
-  // ── Estado del flujo ──────────────────────────────────────────
+  // ── Flujo ─────────────────────────────────────────────────────
   const [step, setStep] = useState<Step>('scan')
   const [qrInput, setQrInput] = useState('')
   const [userData, setUserData] = useState<any>(null)
@@ -50,7 +48,7 @@ function OperadorDashboard() {
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<any>(null)
 
-  // ── Cargar datos del validador al montar ──────────────────────
+  // ── Cargar sesión y datos del validador ───────────────────────
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) {
@@ -67,22 +65,45 @@ function OperadorDashboard() {
     })
   }, [])
 
-  // ── Logout ────────────────────────────────────────────────────
+  // ── Logout por inactividad (5 min) ────────────────────────────
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>
+    const reset = () => {
+      clearTimeout(timer)
+      timer = setTimeout(async () => {
+        await supabase.auth.signOut()
+        navigate({ to: '/login/operador', replace: true })
+      }, 5 * 60 * 1000)
+    }
+    window.addEventListener('touchstart', reset)
+    window.addEventListener('click', reset)
+    window.addEventListener('keydown', reset)
+    reset()
+    return () => {
+      clearTimeout(timer)
+      window.removeEventListener('touchstart', reset)
+      window.removeEventListener('click', reset)
+      window.removeEventListener('keydown', reset)
+    }
+  }, [])
+
+  // ── Logout manual ─────────────────────────────────────────────
   const handleLogout = async () => {
     await supabase.auth.signOut()
     navigate({ to: '/login/operador', replace: true })
   }
 
-  // ── PASO A: Validar QR ────────────────────────────────────────
-  const handleValidateQr = async () => {
+  // ── PASO A: Validar QR (recibe token del scanner) ─────────────
+  const handleValidateQr = async (token: string) => {
     if (!validatorId || !validator) return
+    setQrInput(token)
     setLoading(true)
     setError(null)
     try {
       const res = await validateQrForOperator({
-        token:       qrInput,
+        token,
         validatorId,
-        centerId:    validator.center_id,
+        centerId: validator.center_id,
       })
       if (!res.valid) {
         setError(res.error ?? 'QR inválido')
@@ -104,11 +125,11 @@ function OperadorDashboard() {
     setError(null)
     try {
       const res = await registerRecyclingDelivery({
-        token:       qrInput,
+        token: qrInput,
         validatorId,
-        centerId:    validator.center_id,
+        centerId: validator.center_id,
         material,
-        kg:          parseFloat(kg),
+        kg: parseFloat(kg),
       })
       if (!res.success) {
         setError(res.error ?? 'Error al registrar la entrega')
@@ -133,14 +154,60 @@ function OperadorDashboard() {
   }
 
   const kgFloat = parseFloat(kg)
-  const previewPoints = kg && kgFloat > 0
-    ? Math.round((POINTS_PER_KG[material] ?? 0) * kgFloat)
-    : null
+  const previewPoints =
+    kg && kgFloat > 0
+      ? Math.round((POINTS_PER_KG[material] ?? 0) * kgFloat)
+      : null
 
+  // ══════════ PASO A — SCANNER (full-screen) ══════════
+  if (step === 'scan') {
+    return (
+      <div className="h-screen flex flex-col">
+        {/* Header del scanner */}
+        <div className="px-5 pt-5 pb-3 flex items-center justify-between bg-white shrink-0">
+          <div>
+            <h1 className="font-bold text-gray-900">Escanear QR</h1>
+            <p className="text-xs text-gray-500">
+              {validator?.centers?.name ?? 'Centro de acopio'}
+            </p>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            Cerrar sesión
+          </button>
+        </div>
+
+        {/* Scanner ocupa el espacio restante */}
+        <div className="flex-1 p-4 min-h-0">
+          <QrScanner
+            onScan={handleValidateQr}
+            onError={(e) => setError(e)}
+          />
+        </div>
+
+        {/* Error / retry */}
+        {error && (
+          <div className="mx-4 mb-4 rounded-2xl bg-red-50 border border-red-200 p-4 shrink-0">
+            <p className="text-sm text-red-700 font-medium text-center">{error}</p>
+            <button
+              onClick={() => { setError(null); setQrInput('') }}
+              className="mt-2 w-full text-xs text-red-500 underline text-center"
+            >
+              Escanear de nuevo
+            </button>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // ══════════ PASOS B y C — layout con header ══════════
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
 
-      {/* ── Header fijo ─────────────────────────────────────── */}
+      {/* Header fijo */}
       <header className="sticky top-0 z-20 bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <ShieldCheck className="h-5 w-5 text-primary" />
@@ -157,51 +224,7 @@ function OperadorDashboard() {
         </button>
       </header>
 
-      {/* ── Contenido por paso ──────────────────────────────── */}
       <div className="flex-1 max-w-md w-full mx-auto">
-
-        {/* ══════════ PASO A — SCAN ══════════ */}
-        {step === 'scan' && (
-          <div className="space-y-6 p-6">
-            <div className="text-center">
-              <ShieldCheck className="h-12 w-12 text-primary mx-auto mb-3" />
-              <h1 className="text-xl font-bold">Validar entrega</h1>
-              <p className="text-sm text-gray-500 mt-1">
-                {validator?.centers?.name ?? 'Centro de acopio'}
-              </p>
-            </div>
-
-            <div className="rounded-2xl border-2 border-dashed border-primary/30 bg-primary/5 p-8 text-center">
-              <QrCode className="h-10 w-10 text-primary/40 mx-auto mb-3" />
-              <p className="text-sm font-medium text-gray-600">
-                Escanea o ingresa el código QR del estudiante
-              </p>
-            </div>
-
-            <input
-              type="text"
-              value={qrInput}
-              onChange={e => setQrInput(e.target.value.trim())}
-              placeholder="Código QR del estudiante..."
-              autoFocus
-              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm font-mono outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-            />
-
-            {error && (
-              <p className="text-sm text-red-600 font-medium text-center">
-                {error}
-              </p>
-            )}
-
-            <button
-              onClick={handleValidateQr}
-              disabled={!qrInput || loading}
-              className="w-full rounded-xl bg-primary py-3 text-sm font-bold text-white disabled:opacity-40"
-            >
-              {loading ? 'Verificando QR...' : 'Verificar QR'}
-            </button>
-          </div>
-        )}
 
         {/* ══════════ PASO B — CONFIRM ══════════ */}
         {step === 'confirm' && (
@@ -214,12 +237,8 @@ function OperadorDashboard() {
                   {userData?.full_name?.charAt(0) ?? '?'}
                 </div>
                 <div className="min-w-0">
-                  <p className="font-bold text-gray-900 truncate">
-                    {userData?.full_name}
-                  </p>
-                  <p className="text-xs text-gray-500 font-mono truncate">
-                    {userData?.qr_code}
-                  </p>
+                  <p className="font-bold text-gray-900 truncate">{userData?.full_name}</p>
+                  <p className="text-xs text-gray-500 font-mono truncate">{userData?.qr_code}</p>
                   <p className="text-xs text-primary font-semibold mt-0.5">
                     {userData?.points?.toLocaleString()} EcoPuntos actuales
                   </p>
@@ -234,7 +253,7 @@ function OperadorDashboard() {
                 Tipo de material
               </label>
               <div className="grid grid-cols-2 gap-2 mt-2">
-                {MATERIALS.map(m => (
+                {MATERIALS.map((m) => (
                   <button
                     key={m.value}
                     type="button"
@@ -255,13 +274,11 @@ function OperadorDashboard() {
 
             {/* Input de peso */}
             <div>
-              <label className="text-sm font-semibold text-gray-700">
-                Peso (kg)
-              </label>
+              <label className="text-sm font-semibold text-gray-700">Peso (kg)</label>
               <input
                 type="number"
                 value={kg}
-                onChange={e => setKg(e.target.value)}
+                onChange={(e) => setKg(e.target.value)}
                 placeholder="0.0"
                 min="0.1"
                 max="50"
@@ -274,17 +291,13 @@ function OperadorDashboard() {
             {previewPoints !== null && (
               <div className="rounded-xl bg-primary/10 border border-primary/20 p-3 text-center">
                 <p className="text-xs text-gray-500">Puntos a otorgar</p>
-                <p className="text-2xl font-extrabold text-primary">
-                  +{previewPoints}
-                </p>
+                <p className="text-2xl font-extrabold text-primary">+{previewPoints}</p>
                 <p className="text-xs text-gray-400">EcoPuntos</p>
               </div>
             )}
 
             {error && (
-              <p className="text-sm text-red-600 font-medium text-center">
-                {error}
-              </p>
+              <p className="text-sm text-red-600 font-medium text-center">{error}</p>
             )}
 
             <div className="grid grid-cols-2 gap-3">
@@ -312,9 +325,7 @@ function OperadorDashboard() {
               <CheckCircle2 className="h-10 w-10 text-green-500" />
             </div>
             <div>
-              <h2 className="text-2xl font-extrabold text-gray-900">
-                ¡Entrega registrada!
-              </h2>
+              <h2 className="text-2xl font-extrabold text-gray-900">¡Entrega registrada!</h2>
               <p className="text-sm text-gray-500 mt-1">{result?.full_name}</p>
             </div>
 
@@ -333,9 +344,7 @@ function OperadorDashboard() {
               </div>
               <div className="flex justify-between text-sm border-t pt-3">
                 <span className="text-gray-500">EcoPuntos otorgados</span>
-                <span className="text-xl font-extrabold text-primary">
-                  +{result?.points_earned}
-                </span>
+                <span className="text-xl font-extrabold text-primary">+{result?.points_earned}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Nuevo saldo</span>
