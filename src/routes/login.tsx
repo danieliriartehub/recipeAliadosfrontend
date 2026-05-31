@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useMerchantAuth } from "@/lib/auth";
-import { Eye, EyeOff, Loader2, Recycle } from "lucide-react";
+import { Eye, EyeOff, Loader2, Recycle, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 
 export const Route = createFileRoute("/login")({
@@ -115,6 +115,28 @@ function LoginPage() {
           )}
         </Button>
       </form>
+
+      {/* Acceso operadores */}
+      <div className="relative my-4">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-200" />
+        </div>
+        <div className="relative flex justify-center">
+          <span className="bg-white px-3 text-xs text-gray-400">
+            ¿Eres personal USIL?
+          </span>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => navigate({ to: '/login/operador' })}
+        className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-primary/30 bg-primary/5 py-3 text-sm font-semibold text-primary hover:bg-primary/10 transition-colors"
+      >
+        <ShieldCheck className="h-4 w-4" />
+        Ingreso Operadores
+      </button>
+
       <p className="text-center text-sm text-muted-foreground mt-6">
         ¿Problemas para ingresar? Contacta al administrador.
       </p>
