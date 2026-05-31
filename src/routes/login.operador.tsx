@@ -97,24 +97,33 @@ function OperadorLogin() {
   const canSubmit = email && password.length >= 6 && !loading && !isBlocked
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    /* 1. FONDO: degradado verde oscuro */
+    <div className="min-h-screen bg-gradient-to-br from-primary via-primary/90 to-green-800 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
 
-        {/* Header */}
+        {/* 4. BADGE identificador — no existe en login de aliados */}
+        <div className="flex justify-center mb-4">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 border border-white/30 px-3 py-1 text-xs font-bold text-white">
+            <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
+            Acceso restringido · Solo personal autorizado
+          </span>
+        </div>
+
+        {/* 3. HEADER: ícono y textos blancos */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-primary/10 mb-4">
-            <ShieldCheck className="h-8 w-8 text-primary" />
+          <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-white/20 border-2 border-white/40 mb-4">
+            <ShieldCheck className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Acceso Operadores
+          <h1 className="text-2xl font-bold text-white">
+            Portal Operadores
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Personal autorizado · Centros de acopio USIL
+          <p className="text-sm text-white/70 mt-1">
+            Centros de acopio · Campus USIL
           </p>
         </div>
 
-        {/* Card */}
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+        {/* 2. CARD: semitransparente con borde blanco */}
+        <div className="bg-white/95 backdrop-blur rounded-3xl shadow-xl border border-white/50 p-8">
 
           {/* Bloqueo por intentos */}
           {isBlocked && (
@@ -134,7 +143,7 @@ function OperadorLogin() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
 
-            {/* Email */}
+            {/* Email — 5. inputs sin cambio (card blanca) */}
             <div>
               <label className="text-sm font-medium text-gray-700">
                 Correo institucional
@@ -186,27 +195,27 @@ function OperadorLogin() {
               <p className="text-xs text-red-600 font-medium">{error}</p>
             )}
 
-            {/* Submit */}
+            {/* 6. BOTÓN SUBMIT: blanco con texto verde (invertido vs aliados) */}
             <button
               type="submit"
               disabled={!canSubmit}
-              className="w-full rounded-xl bg-primary py-3 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-full rounded-xl bg-white py-3 text-sm font-bold text-primary transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {loading ? 'Verificando...' : 'Ingresar como Operador'}
             </button>
           </form>
 
-          {/* Info */}
+          {/* 8. Texto pie — sin cambio (card blanca) */}
           <p className="mt-6 text-center text-xs text-gray-400">
             Acceso exclusivo para operadores autorizados.
             <br />Cuentas gestionadas por administración USIL.
           </p>
         </div>
 
-        {/* Volver al login de aliados */}
+        {/* 7. BOTÓN VOLVER: visible sobre fondo verde */}
         <button
           onClick={() => navigate({ to: '/login' })}
-          className="mt-4 flex items-center gap-1 mx-auto text-xs text-gray-500 hover:text-gray-700"
+          className="mt-4 flex items-center gap-1 mx-auto text-xs text-white/60 hover:text-white"
         >
           <ArrowLeft className="h-3 w-3" /> Volver al login de aliados
         </button>
