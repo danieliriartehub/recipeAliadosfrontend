@@ -32,8 +32,8 @@ function Landing() {
             <Link to="/login">
               <Button variant="ghost">Iniciar sesión</Button>
             </Link>
-            <Link to="/register">
-              <Button>Crear cuenta</Button>
+            <Link to="/login">
+              <Button>Ingresar</Button>
             </Link>
           </nav>
         </div>
@@ -48,7 +48,7 @@ function Landing() {
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/20 text-accent-foreground text-xs font-medium mb-5">
               <Sparkles className="w-3.5 h-3.5" />
-              Iniciativa oficial USIL · Campus Pachacámac
+              Iniciativa oficial USIL
             </div>
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-[1.1]">
               Convierte el reciclaje USIL en{" "}
@@ -61,9 +61,9 @@ function Landing() {
               ya reciclan en el campus.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link to="/register">
+              <Link to="/login">
                 <Button size="lg" className="gap-2">
-                  Empezar gratis <ArrowRight className="w-4 h-4" />
+                  Comenzar ahora <ArrowRight className="w-4 h-4" />
                 </Button>
               </Link>
               <Link to="/login">
@@ -84,7 +84,7 @@ function Landing() {
               <FeatureTile icon={<Package />} title="Gestiona productos" body="Sube, edita y publica tu catálogo en segundos." />
               <FeatureTile icon={<Leaf />} title="Marca personalizada" body="Logo, portada, colores. Tú decides cómo te ven." className="mt-8" />
               <FeatureTile icon={<Smartphone />} title="Preview móvil" body="Mira tu perfil tal como lo verán los usuarios." />
-              <FeatureTile icon={<Sparkles />} title="UX cuidada" body="Edita en tiempo real con cambios instantáneos." className="mt-8" />
+              <FeatureTile icon={<Sparkles />} title="Fácil de usar" body="Edita en tiempo real con cambios instantáneos." className="mt-8" />
             </div>
           </div>
         </div>

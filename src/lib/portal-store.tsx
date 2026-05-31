@@ -41,7 +41,7 @@ const defaultCompany: Company = {
   name: "Cafetería USIL",
   tagline: "Sabor sostenible para la comunidad USIL",
   description:
-    "Aliado oficial Recipe dentro del campus USIL. Canjea tus puntos por bebidas, snacks y productos sostenibles directamente en nuestras barras del campus Pachacámac y La Molina.",
+    "Aliado oficial Recipe dentro del campus USIL. Canjea tus puntos por bebidas, snacks y productos sostenibles directamente en nuestros puntos dentro del campus USIL.",
   logo: "",
   cover: "",
   brandColor: "#2f7d4f",
