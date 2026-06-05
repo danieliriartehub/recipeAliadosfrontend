@@ -108,7 +108,10 @@ function OperadorDashboard() {
 
   // ── Agregar / actualizar item al carrito ──────────────────────
   const handleAddItem = async (material: string, kg: number) => {
-    if (!sessionId) return
+    if (!sessionId) {
+      setError('Sesión no inicializada. Recarga la página.')
+      return
+    }
     setLoading(true)
     setError(null)
     try {
