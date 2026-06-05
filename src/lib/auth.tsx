@@ -38,27 +38,29 @@ async function callBackendLogout(): Promise<void> {
   }
 }
 
+import { backendApi } from './backendApi'
+
 // ── Roles y funciones standalone ─────────────────────────────────
 
 export type UserRole = 'aliado' | 'operador' | null
 
-// getUserRole sigue consultando Supabase directamente.
-// Funciona porque después del login se llama setSession(),
-// que establece el JWT en el cliente Supabase local.
 export async function getUserRole(userId: string): Promise<UserRole> {
-  const { data: validator } = await supabase
-    .from('validators')
-    .select('id, is_active')
-    .eq('id', userId)
-    .single()
-  if (validator?.is_active) return 'operador'
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.access_token) return null
 
-  const { data: merchant } = await supabase
-    .from('merchant_users')
-    .select('id, is_active')
-    .eq('id', userId)
-    .single()
-  if (merchant?.is_active) return 'aliado'
+  try {
+    const operatorData = await backendApi.withToken(session.access_token).get<any>('/api/v1/aliados/operator/me')
+    if (operatorData?.id) return 'operador'
+  } catch (e) {
+    // ignorar error, intentar como aliado
+  }
+
+  try {
+    const merchantData = await backendApi.withToken(session.access_token).get<any>('/api/v1/aliados/me')
+    if (merchantData?.is_active) return 'aliado'
+  } catch (e) {
+    // ignorar error
+  }
 
   return null
 }
@@ -158,12 +160,17 @@ export function MerchantAuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
 
   async function fetchMerchantUser(userId: string) {
-    const { data } = await supabase
-      .from('merchant_users')
-      .select('*, merchant_partners(*)')
-      .eq('id', userId)
-      .single()
-    setMerchantUser(data ?? null)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) {
+        setMerchantUser(null)
+        return
+      }
+      const data = await backendApi.withToken(session.access_token).get<any>('/api/v1/aliados/me')
+      setMerchantUser(data ?? null)
+    } catch {
+      setMerchantUser(null)
+    }
   }
 
   useEffect(() => {

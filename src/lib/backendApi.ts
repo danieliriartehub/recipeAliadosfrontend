@@ -61,8 +61,12 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
   const body = await res.json().catch(() => ({ detail: res.statusText }))
 
   if (!res.ok) {
-    // FastAPI devuelve errores como { detail: "mensaje" }
-    throw new Error(body?.detail ?? `Error ${res.status}`)
+    // FastAPI devuelve errores como { detail: "mensaje" } o detail: [...] para errores de validación
+    let errorMessage = `Error ${res.status}`
+    if (body?.detail) {
+      errorMessage = typeof body.detail === 'string' ? body.detail : JSON.stringify(body.detail)
+    }
+    throw new Error(errorMessage)
   }
 
   return body as T

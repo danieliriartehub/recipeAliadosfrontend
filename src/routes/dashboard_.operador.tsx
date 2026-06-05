@@ -11,9 +11,10 @@ import {
   getSessionSummary,
   confirmDelivery,
 } from '@/lib/api'
+import { backendApi } from '@/lib/backendApi'
 import { QrScanner } from '@/components/QrScanner'
 
-export const Route = createFileRoute('/dashboard/operador')({
+export const Route = createFileRoute('/dashboard_/operador')({
   component: OperadorDashboard,
 })
 
@@ -60,11 +61,12 @@ function OperadorDashboard() {
         navigate({ to: '/login/operador', replace: true })
         return
       }
-      const { data: v } = await supabase
-        .from('validators')
-        .select('id, full_name, center_id, centers(name)')
-        .eq('id', session.user.id)
-        .single()
+      let v;
+      try {
+        v = await backendApi.withToken(session.access_token).get<ValidatorInfo>('/api/v1/aliados/operator/me')
+      } catch (e) {
+        v = null
+      }
       if (!v) {
         await signOut()
         navigate({ to: '/login/operador', replace: true })
