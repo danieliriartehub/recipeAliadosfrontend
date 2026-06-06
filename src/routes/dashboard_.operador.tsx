@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { CheckCircle2, LogOut } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { signOut } from '@/lib/auth'
 import {
   validateQrForOperator,
   createDeliverySession,
@@ -10,9 +11,10 @@ import {
   getSessionSummary,
   confirmDelivery,
 } from '@/lib/api'
+import { backendApi } from '@/lib/backendApi'
 import { QrScanner } from '@/components/QrScanner'
 
-export const Route = createFileRoute('/dashboard/operador')({
+export const Route = createFileRoute('/dashboard_/operador')({
   component: OperadorDashboard,
 })
 
@@ -59,13 +61,14 @@ function OperadorDashboard() {
         navigate({ to: '/login/operador', replace: true })
         return
       }
-      const { data: v } = await supabase
-        .from('validators')
-        .select('id, full_name, center_id, centers(name)')
-        .eq('id', session.user.id)
-        .single()
+      let v;
+      try {
+        v = await backendApi.withToken(session.access_token).get<ValidatorInfo>('/api/v1/aliados/operator/me')
+      } catch (e) {
+        v = null
+      }
       if (!v) {
-        await supabase.auth.signOut()
+        await signOut()
         navigate({ to: '/login/operador', replace: true })
         return
       }
@@ -82,7 +85,7 @@ function OperadorDashboard() {
     const reset = () => {
       clearTimeout(timer)
       timer = setTimeout(async () => {
-        await supabase.auth.signOut()
+        await signOut()
         navigate({ to: '/login/operador', replace: true })
       }, 5 * 60 * 1000)
     }
@@ -99,13 +102,16 @@ function OperadorDashboard() {
   }, [])
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
+    await signOut()
     navigate({ to: '/login/operador', replace: true })
   }
 
   // ── Agregar / actualizar item al carrito ──────────────────────
   const handleAddItem = async (material: string, kg: number) => {
-    if (!sessionId) return
+    if (!sessionId) {
+      setError('Sesión no inicializada. Recarga la página.')
+      return
+    }
     setLoading(true)
     setError(null)
     try {

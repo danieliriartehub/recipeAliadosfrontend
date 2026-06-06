@@ -1,4 +1,15 @@
 import { supabase } from './supabase'
+import { backendApi } from './backendApi'
+
+// ─── Helper: obtener token activo ─────────────────────────────────────────────
+
+async function getToken(): Promise<string> {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.access_token) throw new Error('No autenticado')
+  return session.access_token
+}
+
+// ─── Interfaces ─────────────────────────────────────────────────────────────
 
 export interface MerchantProduct {
   id: string
@@ -13,35 +24,37 @@ export interface MerchantProduct {
   created_at: string
 }
 
+// ─── Merchant Products ──────────────────────────────────────────────────────
+
 export async function getMerchantProducts(merchantPartnerId: string) {
-  return supabase
-    .from('merchant_products')
-    .select('*')
-    .eq('merchant_partner_id', merchantPartnerId)
-    .eq('is_active', true)
-    .order('created_at', { ascending: false })
+  const token = await getToken()
+  return backendApi.withToken(token).get<MerchantProduct[]>(`/api/v1/aliados/products/${merchantPartnerId}`)
 }
 
 export async function addMerchantProduct(data: Omit<MerchantProduct, 'id' | 'created_at'>) {
-  return supabase.from('merchant_products').insert(data).select().single()
+  const token = await getToken()
+  return backendApi.withToken(token).post<MerchantProduct>('/api/v1/aliados/products', data)
 }
 
 export async function updateMerchantProduct(
   id: string,
   data: Partial<Omit<MerchantProduct, 'id' | 'created_at'>>,
 ) {
-  return supabase.from('merchant_products').update(data).eq('id', id)
+  const token = await getToken()
+  return backendApi.withToken(token).patch<MerchantProduct>(`/api/v1/aliados/products/${id}`, data)
 }
 
 export async function removeMerchantProduct(id: string) {
-  return supabase.from('merchant_products').update({ is_active: false }).eq('id', id)
+  const token = await getToken()
+  return backendApi.withToken(token).delete<void>(`/api/v1/aliados/products/${id}`)
 }
 
 export async function updateMerchantPartner(
   id: string,
   data: Record<string, unknown>,
 ) {
-  return supabase.from('merchant_partners').update(data).eq('id', id)
+  const token = await getToken()
+  return backendApi.withToken(token).patch<unknown>(`/api/v1/aliados/partner/${id}`, data)
 }
 
 // ── Operador / Validador ──────────────────────────────────────────
@@ -51,13 +64,8 @@ export async function validateQrForOperator(params: {
   validatorId: string
   centerId: string
 }) {
-  const { data, error } = await supabase.rpc('validate_qr_for_operator', {
-    p_token:        params.token,
-    p_validator_id: params.validatorId,
-    p_center_id:    params.centerId,
-  })
-  if (error) throw error
-  return data as {
+  const token = await getToken()
+  return backendApi.withToken(token).post<{
     valid: boolean
     error?: string
     user_id?: string
@@ -66,7 +74,11 @@ export async function validateQrForOperator(params: {
     points?: number
     center_id?: string
     validated_at?: string
-  }
+  }>('/api/v1/aliados/operator/validate-qr', {
+    token: params.token,
+    validator_id: params.validatorId,
+    center_id: params.centerId,
+  })
 }
 
 // ── Sesión de entrega (SCRUM-92 / SCRUM-89 / SCRUM-90) ───────────
@@ -75,12 +87,12 @@ export async function createDeliverySession(
   operatorId: string,
   centerId: string,
 ) {
-  const { data, error } = await supabase.rpc('create_delivery_session', {
-    p_operator_id: operatorId,
-    p_center_id:   centerId,
+  const token = await getToken()
+  const result = await backendApi.withToken(token).post<{ session_id: string }>('/api/v1/aliados/operator/delivery-session', {
+    operator_id: operatorId,
+    center_id: centerId,
   })
-  if (error) throw error
-  return data as string // session_id
+  return result.session_id
 }
 
 export async function addDeliveryItem(
@@ -88,30 +100,27 @@ export async function addDeliveryItem(
   material: string,
   kg: number,
 ) {
-  const { data, error } = await supabase.rpc('add_delivery_item', {
-    p_session_id: sessionId,
-    p_material:   material,
-    p_kg:         kg,
+  const token = await getToken()
+  return backendApi.withToken(token).post<unknown>('/api/v1/aliados/operator/delivery-session/item', {
+    session_id: sessionId,
+    material: material,
+    kg: kg,
   })
-  if (error) throw error
-  return data
 }
 
 export async function removeDeliveryItem(sessionId: string, itemId: string) {
-  const { data, error } = await supabase.rpc('remove_delivery_item', {
-    p_session_id: sessionId,
-    p_item_id:    itemId,
+  const token = await getToken()
+  return backendApi.withToken(token).deleteAuth<void>('/api/v1/aliados/operator/delivery-session/item', token, {
+     body: {
+       session_id: sessionId,
+       item_id: itemId
+     }
   })
-  if (error) throw error
-  return data
 }
 
 export async function getSessionSummary(sessionId: string) {
-  const { data, error } = await supabase.rpc('get_session_summary', {
-    p_session_id: sessionId,
-  })
-  if (error) throw error
-  return data
+  const token = await getToken()
+  return backendApi.withToken(token).get<unknown>(`/api/v1/aliados/operator/delivery-session/${sessionId}/summary`)
 }
 
 export async function confirmDelivery(
@@ -119,13 +128,8 @@ export async function confirmDelivery(
   qrToken: string,
   validatorId: string,
 ) {
-  const { data, error } = await supabase.rpc('confirm_delivery', {
-    p_session_id:   sessionId,
-    p_qr_token:     qrToken,
-    p_validator_id: validatorId,
-  })
-  if (error) throw error
-  return data as {
+  const token = await getToken()
+  return backendApi.withToken(token).post<{
     success: boolean
     error?: string
     session_preserved?: boolean
@@ -134,7 +138,11 @@ export async function confirmDelivery(
     total_points?: number
     total_co2?: number
     total_trees?: number
-  }
+  }>('/api/v1/aliados/operator/confirm-delivery', {
+    session_id: sessionId,
+    qr_token: qrToken,
+    validator_id: validatorId,
+  })
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -146,15 +154,8 @@ export async function registerRecyclingDelivery(params: {
   material: string
   kg: number
 }) {
-  const { data, error } = await supabase.rpc('register_recycling_delivery', {
-    p_token:        params.token,
-    p_validator_id: params.validatorId,
-    p_center_id:    params.centerId,
-    p_material:     params.material,
-    p_kg:           params.kg,
-  })
-  if (error) throw error
-  return data as {
+  const token = await getToken()
+  return backendApi.withToken(token).post<{
     success: boolean
     error?: string
     recycling_id?: string
@@ -165,5 +166,11 @@ export async function registerRecyclingDelivery(params: {
     co2_saved_kg?: number
     new_balance?: number
     registered_at?: string
-  }
+  }>('/api/v1/aliados/operator/register-recycling', {
+    token: params.token,
+    validator_id: params.validatorId,
+    center_id: params.centerId,
+    material: params.material,
+    kg: params.kg,
+  })
 }
