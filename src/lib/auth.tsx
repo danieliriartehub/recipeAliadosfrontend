@@ -136,6 +136,7 @@ interface MerchantPartner {
   category: string | null
   email: string | null
   website: string | null
+  banner_url: string | null
   created_at: string
 }
 

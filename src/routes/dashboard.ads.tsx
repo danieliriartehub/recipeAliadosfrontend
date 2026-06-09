@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState, useRef, ChangeEvent } from 'react'
+import { useState, useRef, ChangeEvent, useEffect } from 'react'
 import { useMerchantAuth } from '@/lib/auth'
 import { backendApi } from '@/lib/backendApi'
 import { Button } from '@/components/ui/button'
@@ -21,6 +21,12 @@ function DashboardAds() {
   const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    if (merchantPartner?.banner_url && !selectedImage) {
+      setSelectedImage(merchantPartner.banner_url)
+    }
+  }, [merchantPartner?.banner_url])
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
