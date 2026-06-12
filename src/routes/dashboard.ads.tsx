@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
-import { Megaphone, Image as ImageIcon, Upload, X } from 'lucide-react'
+import { Megaphone, Image as ImageIcon, Upload, X, Trash2, Link as LinkIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { usePortal } from '@/lib/portal-store'
 
@@ -15,18 +15,43 @@ export const Route = createFileRoute('/dashboard/ads')({
   component: DashboardAds,
 })
 
+interface Banner {
+  id: string
+  banner_url: string
+  link_url?: string
+  title?: string
+  is_active: boolean
+}
+
 function DashboardAds() {
   const { session, merchantPartner } = useMerchantAuth()
+  
+  const [banners, setBanners] = useState<Banner[]>([])
+  const [isLoadingBanners, setIsLoadingBanners] = useState(true)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const [linkUrl, setLinkUrl] = useState('')
   const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
-    if (merchantPartner?.banner_url && !selectedImage) {
-      setSelectedImage(merchantPartner.banner_url)
+    if (session?.access_token && merchantPartner?.id) {
+      fetchBanners()
     }
-  }, [merchantPartner?.banner_url])
+  }, [session?.access_token, merchantPartner?.id])
+
+  const fetchBanners = async () => {
+    try {
+      const api = backendApi.withToken(session!.access_token)
+      const data = await api.get<Banner[]>(`/api/v1/aliados/partner/${merchantPartner!.id}/banners`)
+      setBanners(data || [])
+    } catch (error) {
+      console.error('Error fetching banners:', error)
+      toast.error('No se pudieron cargar los banners')
+    } finally {
+      setIsLoadingBanners(false)
+    }
+  }
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -59,7 +84,6 @@ function DashboardAds() {
       const canvas = canvasRef.current
       if (!canvas) throw new Error('No canvas element')
 
-      // Mantener proporción (ej: Max width 1200)
       let width = img.width
       let height = img.height
       const MAX_WIDTH = 1200
@@ -74,7 +98,6 @@ function DashboardAds() {
       if (!ctx) throw new Error('No 2d context')
       ctx.drawImage(img, 0, 0, width, height)
 
-      // Convertir a webp (calidad 0.85)
       canvas.toBlob(async (blob) => {
         if (!blob) {
           toast.error('Error al procesar la imagen')
@@ -84,14 +107,20 @@ function DashboardAds() {
 
         const formData = new FormData()
         formData.append('file', blob, 'banner.webp')
+        
+        // Append link if provided
+        const finalLinkUrl = linkUrl.trim()
+        const uploadUrl = finalLinkUrl 
+          ? `/api/v1/aliados/partner/${merchantPartner!.id}/banners?link_url=${encodeURIComponent(finalLinkUrl)}`
+          : `/api/v1/aliados/partner/${merchantPartner!.id}/banners`
 
         try {
           const api = backendApi.withToken(session.access_token)
-          // Asume que route es /api/v1/aliados/partner/{partner_id}/banner
-          const res = await api.postForm<{ banner_url: string }>(`/api/v1/aliados/partner/${merchantPartner.id}/banner`, formData)
+          const newBanner = await api.postForm<Banner>(uploadUrl, formData)
           
-          toast.success('¡Banner actualizado exitosamente!')
-          setSelectedImage(res.banner_url)
+          toast.success('¡Banner agregado exitosamente!')
+          setBanners(prev => [newBanner, ...prev])
+          clearSelection()
         } catch (error: any) {
           toast.error(error.message || 'Error al subir el banner')
         } finally {
@@ -105,8 +134,22 @@ function DashboardAds() {
     }
   }
 
+  const handleDelete = async (bannerId: string) => {
+    if (!confirm('¿Estás seguro de eliminar este banner?')) return
+    
+    try {
+      const api = backendApi.withToken(session!.access_token)
+      await api.delete(`/api/v1/aliados/partner/${merchantPartner!.id}/banners/${bannerId}`)
+      setBanners(prev => prev.filter(b => b.id !== bannerId))
+      toast.success('Banner eliminado')
+    } catch (error) {
+      toast.error('Error al eliminar el banner')
+    }
+  }
+
   const clearSelection = () => {
     setSelectedImage(null)
+    setLinkUrl('')
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
@@ -117,10 +160,10 @@ function DashboardAds() {
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Megaphone className="w-6 h-6 text-primary" />
-          Publicidad
+          Gestión de Publicidad
         </h1>
         <p className="text-muted-foreground mt-1">
-          Atrae a más alumnos configurando un banner publicitario que se mostrará en el inicio de la App de Alumnos.
+          Atrae a más alumnos agregando banners publicitarios. Se mostrarán en el Carrusel, Pop-up de inicio y en la tienda.
         </p>
       </div>
 
@@ -128,7 +171,7 @@ function DashboardAds() {
         {/* Subida de Imagen */}
         <Card>
           <CardHeader>
-            <CardTitle>Banner de Marca</CardTitle>
+            <CardTitle>Añadir Nuevo Banner</CardTitle>
             <CardDescription>
               Sube una imagen atractiva (promociones, nuevos productos). Será optimizada automáticamente.
             </CardDescription>
@@ -144,6 +187,20 @@ function DashboardAds() {
                 onChange={handleFileChange}
                 ref={fileInputRef}
               />
+            </div>
+            
+            <div className="grid w-full max-w-sm items-center gap-1.5 mt-2">
+              <Label htmlFor="banner-link">URL de destino (Opcional)</Label>
+              <div className="flex relative">
+                <LinkIcon className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  id="banner-link" 
+                  placeholder="https://tu-sitio.com/promo" 
+                  className="pl-9"
+                  value={linkUrl}
+                  onChange={(e) => setLinkUrl(e.target.value)}
+                />
+              </div>
             </div>
             
             <canvas ref={canvasRef} className="hidden" />
@@ -177,94 +234,50 @@ function DashboardAds() {
           </CardFooter>
         </Card>
 
-        {/* Preview en App Alumnos */}
-        <Card className="bg-slate-50 overflow-hidden">
+        {/* Lista de Banners */}
+        <Card className="bg-slate-50 overflow-hidden flex flex-col">
           <CardHeader>
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Smartphone className="w-4 h-4" />
-              Vista Previa - App Alumnos
+            <CardTitle className="text-lg font-medium">
+              Banners Activos ({banners.length})
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-0 flex justify-center pb-8">
-            {/* Mockup del celular */}
-            <div className="w-[320px] h-[600px] bg-white rounded-[3rem] border-[8px] border-slate-900 shadow-xl overflow-hidden relative flex flex-col">
-              {/* Status bar mock */}
-              <div className="h-6 bg-slate-100 flex items-center justify-between px-6 text-[10px] text-slate-500 font-medium">
-                <span>9:41</span>
-                <div className="flex gap-1">
-                  <span>LTE</span>
-                  <span>100%</span>
-                </div>
+          <CardContent className="flex-1 overflow-y-auto space-y-4">
+            {isLoadingBanners ? (
+              <div className="text-center text-muted-foreground py-8">Cargando banners...</div>
+            ) : banners.length === 0 ? (
+              <div className="text-center text-muted-foreground py-8">
+                No tienes banners configurados aún.
               </div>
-              
-              {/* App Header */}
-              <div className="px-4 pt-4 pb-2">
-                <h3 className="text-xl font-bold text-slate-800">Hola, Alumno 👋</h3>
-                <p className="text-xs text-slate-500">¿Listo para reciclar hoy?</p>
-              </div>
-
-              {/* Banner Preview */}
-              <div className="px-4 mt-2">
-                {selectedImage ? (
-                  <div className="relative rounded-2xl overflow-hidden shadow-sm bg-slate-200 aspect-[21/9]">
-                    <img src={selectedImage} className="w-full h-full object-cover" alt="Ad" />
-                    <div className="absolute top-2 right-2 bg-black/40 backdrop-blur-sm p-1 rounded-full text-white cursor-pointer hover:bg-black/60">
-                      <X className="w-3 h-3" />
-                    </div>
-                    <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur text-xs font-bold px-2 py-0.5 rounded shadow-sm">
-                      Publicidad
-                    </div>
+            ) : (
+              banners.map((banner) => (
+                <div key={banner.id} className="bg-white rounded-lg border shadow-sm p-3 flex gap-4 relative group">
+                  <div className="w-32 rounded bg-slate-100 overflow-hidden flex-shrink-0 aspect-[21/9]">
+                    <img src={banner.banner_url} alt="Banner" className="w-full h-full object-cover" />
                   </div>
-                ) : (
-                  <div className="rounded-2xl border-2 border-dashed border-slate-200 aspect-[21/9] flex items-center justify-center text-slate-400 bg-slate-50">
-                    <span className="text-xs font-medium">Espacio publicitario</span>
+                  <div className="flex-1 flex flex-col justify-center">
+                    {banner.link_url ? (
+                      <a href={banner.link_url} target="_blank" rel="noreferrer" className="text-sm font-medium text-blue-600 hover:underline flex items-center gap-1">
+                        <LinkIcon className="w-3 h-3" />
+                        Ver enlace
+                      </a>
+                    ) : (
+                      <span className="text-sm text-slate-500 italic">Sin enlace</span>
+                    )}
+                    <span className="text-xs text-green-600 font-medium mt-1">Activo</span>
                   </div>
-                )}
-              </div>
-
-              {/* Other App Content mock */}
-              <div className="px-4 mt-6 grid grid-cols-2 gap-3">
-                <div className="h-24 bg-green-50 rounded-2xl border border-green-100 flex flex-col items-center justify-center">
-                  <div className="w-8 h-8 rounded-full bg-green-200 mb-1" />
-                  <div className="w-16 h-2 bg-green-200 rounded-full" />
+                  <button
+                    onClick={() => handleDelete(banner.id)}
+                    className="absolute top-2 right-2 p-1.5 text-red-500 hover:bg-red-50 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Eliminar banner"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
-                <div className="h-24 bg-blue-50 rounded-2xl border border-blue-100 flex flex-col items-center justify-center">
-                  <div className="w-8 h-8 rounded-full bg-blue-200 mb-1" />
-                  <div className="w-16 h-2 bg-blue-200 rounded-full" />
-                </div>
-              </div>
-              
-              <div className="px-4 mt-4">
-                <div className="h-4 w-32 bg-slate-200 rounded-full mb-3" />
-                <div className="space-y-2">
-                  <div className="h-16 bg-slate-50 rounded-xl border border-slate-100" />
-                  <div className="h-16 bg-slate-50 rounded-xl border border-slate-100" />
-                </div>
-              </div>
-            </div>
+              ))
+            )}
           </CardContent>
         </Card>
       </div>
     </div>
-  )
-}
-
-function Smartphone(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
-      <path d="M12 18h.01" />
-    </svg>
   )
 }
