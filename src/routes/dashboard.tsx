@@ -14,6 +14,7 @@ import {
   Recycle,
   Menu,
   X,
+  Megaphone,
   Ticket,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,7 @@ const nav: { to: string; label: string; icon: typeof LayoutDashboard; exact?: bo
   { to: "/dashboard/redemptions", label: "Canjes", icon: Ticket },
   { to: "/dashboard/products", label: "Productos", icon: Package },
   { to: "/dashboard/profile", label: "Perfil de marca", icon: Store },
+  { to: "/dashboard/ads", label: "Publicidad", icon: Megaphone },
   { to: "/dashboard/preview", label: "Preview móvil", icon: Smartphone },
 ];
 
