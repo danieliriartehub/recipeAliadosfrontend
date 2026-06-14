@@ -14,8 +14,8 @@ import {
   Recycle,
   Menu,
   X,
-  Megaphone,
   Ticket,
+  Megaphone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
