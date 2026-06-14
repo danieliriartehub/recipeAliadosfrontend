@@ -13,6 +13,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getMerchantMe, updateMerchantPartner } from "@/lib/api";
 import { useEffect } from "react";
+import { useMerchantAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/dashboard/profile")({
   component: ProfilePage,
@@ -49,6 +50,7 @@ type ProfileFormValues = z.infer<typeof profileSchema>;
 function ProfilePage() {
   const queryClient = useQueryClient();
   const { updateCompany } = usePortal();
+  const { merchantPartner, merchantUser } = useMerchantAuth();
 
   const {
     data,
@@ -57,9 +59,18 @@ function ProfilePage() {
   } = useQuery({
     queryKey: ["merchantMe"],
     queryFn: getMerchantMe,
+    initialData: merchantUser && merchantPartner ? { 
+      id: merchantUser.id, 
+      merchant_partners: merchantPartner 
+    } : undefined,
   });
 
   const partner = data?.merchant_partners;
+
+  // Add debug logs
+  console.log("Context partner:", merchantPartner);
+  console.log("Query status:", { isFetching, isError, data });
+  console.log("Partner data to load:", partner);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
