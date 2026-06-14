@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as LandingAliadosRouteImport } from './routes/landing-aliados'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
@@ -20,6 +21,7 @@ import { Route as DashboardRedemptionsRouteImport } from './routes/dashboard.red
 import { Route as DashboardProfileRouteImport } from './routes/dashboard.profile'
 import { Route as DashboardProductsRouteImport } from './routes/dashboard.products'
 import { Route as DashboardPreviewRouteImport } from './routes/dashboard.preview'
+import { Route as DashboardAdsRouteImport } from './routes/dashboard.ads'
 
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
@@ -29,6 +31,11 @@ const RegisterRoute = RegisterRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LandingAliadosRoute = LandingAliadosRouteImport.update({
+  id: '/landing-aliados',
+  path: '/landing-aliados',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -76,12 +83,19 @@ const DashboardPreviewRoute = DashboardPreviewRouteImport.update({
   path: '/preview',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardAdsRoute = DashboardAdsRouteImport.update({
+  id: '/ads',
+  path: '/ads',
+  getParentRoute: () => DashboardRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRouteWithChildren
+  '/landing-aliados': typeof LandingAliadosRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/dashboard/ads': typeof DashboardAdsRoute
   '/dashboard/preview': typeof DashboardPreviewRoute
   '/dashboard/products': typeof DashboardProductsRoute
   '/dashboard/profile': typeof DashboardProfileRoute
@@ -92,8 +106,10 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/landing-aliados': typeof LandingAliadosRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/dashboard/ads': typeof DashboardAdsRoute
   '/dashboard/preview': typeof DashboardPreviewRoute
   '/dashboard/products': typeof DashboardProductsRoute
   '/dashboard/profile': typeof DashboardProfileRoute
@@ -106,8 +122,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRouteWithChildren
+  '/landing-aliados': typeof LandingAliadosRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/dashboard/ads': typeof DashboardAdsRoute
   '/dashboard/preview': typeof DashboardPreviewRoute
   '/dashboard/products': typeof DashboardProductsRoute
   '/dashboard/profile': typeof DashboardProfileRoute
@@ -121,8 +139,10 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/dashboard'
+    | '/landing-aliados'
     | '/login'
     | '/register'
+    | '/dashboard/ads'
     | '/dashboard/preview'
     | '/dashboard/products'
     | '/dashboard/profile'
@@ -133,8 +153,10 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/landing-aliados'
     | '/login'
     | '/register'
+    | '/dashboard/ads'
     | '/dashboard/preview'
     | '/dashboard/products'
     | '/dashboard/profile'
@@ -146,8 +168,10 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/dashboard'
+    | '/landing-aliados'
     | '/login'
     | '/register'
+    | '/dashboard/ads'
     | '/dashboard/preview'
     | '/dashboard/products'
     | '/dashboard/profile'
@@ -160,6 +184,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRouteWithChildren
+  LandingAliadosRoute: typeof LandingAliadosRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   DashboardOperadorRoute: typeof DashboardOperadorRoute
@@ -180,6 +205,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/landing-aliados': {
+      id: '/landing-aliados'
+      path: '/landing-aliados'
+      fullPath: '/landing-aliados'
+      preLoaderRoute: typeof LandingAliadosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -245,10 +277,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardPreviewRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/ads': {
+      id: '/dashboard/ads'
+      path: '/ads'
+      fullPath: '/dashboard/ads'
+      preLoaderRoute: typeof DashboardAdsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
   }
 }
 
 interface DashboardRouteChildren {
+  DashboardAdsRoute: typeof DashboardAdsRoute
   DashboardPreviewRoute: typeof DashboardPreviewRoute
   DashboardProductsRoute: typeof DashboardProductsRoute
   DashboardProfileRoute: typeof DashboardProfileRoute
@@ -257,6 +297,7 @@ interface DashboardRouteChildren {
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardAdsRoute: DashboardAdsRoute,
   DashboardPreviewRoute: DashboardPreviewRoute,
   DashboardProductsRoute: DashboardProductsRoute,
   DashboardProfileRoute: DashboardProfileRoute,
@@ -271,6 +312,7 @@ const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRouteWithChildren,
+  LandingAliadosRoute: LandingAliadosRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   DashboardOperadorRoute: DashboardOperadorRoute,
