@@ -165,10 +165,6 @@ function ProductsPage() {
 
   const onSubmit = (data: ProductFormValues) => {
     const payload = { ...data };
-    if (payload.image_url && payload.image_url.startsWith("data:image")) {
-      toast.info("Subida a Storage pendiente de implementar. Se enviará una URL de demostración.");
-      payload.image_url = "https://images.unsplash.com/photo-1610557892470-55d9e80c0bce?w=800&q=80";
-    }
 
     if (editing) {
       updateProduct.mutate(
@@ -186,10 +182,6 @@ function ProductsPage() {
 
   const handleChatbotSubmit = (data: ChatProductPayload) => {
     const payload = { ...data };
-    if (payload.image_url && payload.image_url.startsWith("data:image")) {
-      toast.info("Subida a Storage pendiente de implementar. Se enviará una URL de demostración.");
-      payload.image_url = "https://images.unsplash.com/photo-1610557892470-55d9e80c0bce?w=800&q=80";
-    }
 
     createProduct.mutate(payload, {
       onSuccess: () => {
@@ -393,7 +385,8 @@ function ImagePicker({
         <input
           type="file"
           accept="image/*"
-          className="hidden"
+          className="sr-only"
+          onClick={(e) => ((e.target as HTMLInputElement).value = "")}
           onChange={(e) => onPick(e.target.files?.[0])}
         />
       </label>
