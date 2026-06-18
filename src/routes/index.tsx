@@ -46,11 +46,11 @@ const BENEFICIOS = [
 const PLATFORMS = [
   {
     id: "recipe-users",
-    emoji: "📱",
+    icon: "phone",
     tag: "Para Estudiantes",
     name: "App RECIPE",
     description: "La app principal para ubicar centros, registrar tu reciclaje con QR y canjear tus recompensas.",
-    webUrl: "https://recipefrontend-phi.vercel.app/",
+    webUrl: "https://mi-recipe.vercel.app/",
     apkUrl: "https://github.com/danieliriartehub/recipefrontend/releases/download/App/app-recipe.apk", // Enlace de descarga (puede actualizarse luego)
     color: "from-emerald-500 to-teal-600",
     bgSoft: "bg-emerald-50/50 border-emerald-200",
@@ -58,7 +58,7 @@ const PLATFORMS = [
   },
   {
     id: "recipe-aliados",
-    emoji: "🤝",
+    icon: "handshake",
     tag: "Para Empresas y USIL",
     name: "Portal Aliados",
     description: "Gestiona tu marca, valida entregas y ofrece productos al catálogo de recompensas de la comunidad USIL.",
@@ -274,8 +274,18 @@ function LandingGeneral() {
             <div key={p.id} className={`flex flex-col rounded-3xl border p-8 shadow-sm transition-transform hover:-translate-y-1 ${p.bgSoft} bg-white`}>
               <div className="mb-6 flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className={`flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br ${p.color} text-3xl shadow-md`}>
-                    {p.emoji}
+                  <div className={`flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br ${p.color} text-white shadow-md`}>
+                    {p.icon === "phone" ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8">
+                        <rect x="5" y="2" width="14" height="20" rx="2" />
+                        <line x1="12" y1="18" x2="12.01" y2="18" />
+                      </svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8">
+                        <path d="M20.42 4.58a5.4 5.4 0 0 0-7.65 0l-.77.78-.77-.78a5.4 5.4 0 0 0-7.65 0C1.46 6.7 1.33 10.28 4 13l8 8 8-8c2.67-2.72 2.54-6.3.42-8.42z" />
+                        <path d="M12 5.36 8.87 8.5a2.13 2.13 0 0 0 0 3l.36.36a2.13 2.13 0 0 0 3 0l.26-.26a2.13 2.13 0 0 1 3 0l.36.36a2.13 2.13 0 0 0 3 0L20 10" />
+                      </svg>
+                    )}
                   </div>
                   <div>
                     <span className={`inline-block rounded-full px-3 py-1 text-xs font-bold ${p.tagColor}`}>
