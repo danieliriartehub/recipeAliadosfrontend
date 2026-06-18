@@ -33,11 +33,28 @@ const nav: { to: string; label: string; icon: typeof LayoutDashboard; exact?: bo
 ];
 
 function DashboardLayout() {
-  const { company, logout } = usePortal();
-  const { signOut } = useMerchantAuth();
+  const { updateCompany } = usePortal();
+  const { signOut, merchantPartner } = useMerchantAuth();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [open, setOpen] = useState(false);
+
+  // Sincronizar datos reales del partner al portal-store (para el live preview)
+  useEffect(() => {
+    if (merchantPartner) {
+      updateCompany({
+        name: merchantPartner.business_name || "",
+        tagline: merchantPartner.tagline || "",
+        description: merchantPartner.profile_description || "",
+        logo: merchantPartner.logo_url || "",
+        cover: merchantPartner.banner_url || "",
+        brandColor: merchantPartner.brand_color || "#2f7d4f",
+        category: merchantPartner.category || "",
+        email: merchantPartner.contact_email || "",
+        website: merchantPartner.website_url || "",
+      });
+    }
+  }, [merchantPartner]);
 
   // Verificar sesión y rol al montar
   useEffect(() => {
@@ -62,8 +79,13 @@ function DashboardLayout() {
     exact ? pathname === to : pathname === to || pathname.startsWith(to + "/");
 
   const handleLogout = async () => {
-    logout();
     await signOut();
+  };
+
+  // Datos reales para el sidebar
+  const sidebarCompany = {
+    name: merchantPartner?.business_name || "",
+    logo: merchantPartner?.logo_url || "",
   };
 
   return (
@@ -72,7 +94,7 @@ function DashboardLayout() {
         {/* Sidebar desktop */}
         <aside className="hidden lg:flex w-64 flex-col bg-sidebar border-r border-sidebar-border sticky top-0 h-screen">
           <SidebarContent
-            company={company}
+            company={sidebarCompany}
             isActive={isActive}
             onLogout={handleLogout}
           />
@@ -84,7 +106,7 @@ function DashboardLayout() {
             <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
             <aside className="relative w-72 bg-sidebar border-r border-sidebar-border flex flex-col">
               <SidebarContent
-                company={company}
+                company={sidebarCompany}
                 isActive={isActive}
                 onLogout={handleLogout}
               />
@@ -98,7 +120,7 @@ function DashboardLayout() {
             <button onClick={() => setOpen(true)} className="p-2 -ml-2">
               {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
-            <div className="font-semibold text-sm truncate">{company.name}</div>
+            <div className="font-semibold text-sm truncate">{sidebarCompany.name}</div>
             <div className="w-8" />
           </header>
 

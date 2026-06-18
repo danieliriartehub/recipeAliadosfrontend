@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { usePortal } from "@/lib/portal-store";
-import { Package, Coins, TrendingUp, ArrowRight, Smartphone, Store } from "lucide-react";
+import { useMerchantAuth } from "@/lib/auth";
+import { useQuery } from "@tanstack/react-query";
+import { getMerchantProducts } from "@/lib/api";
+import { Package, Coins, TrendingUp, ArrowRight, Smartphone, Store, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/dashboard/")({
@@ -8,29 +10,46 @@ export const Route = createFileRoute("/dashboard/")({
 });
 
 function DashboardHome() {
-  const { company, products } = usePortal();
-  const totalPoints = products.reduce((s, p) => s + p.points * Math.max(1, 100 - p.stock), 0);
+  const { merchantPartner } = useMerchantAuth();
+  const companyName = merchantPartner?.business_name || "";
+  const partnerId = merchantPartner?.id;
+
+  const { data: products = [], isLoading } = useQuery({
+    queryKey: ["merchantProducts", partnerId],
+    queryFn: () => getMerchantProducts(partnerId!),
+    enabled: !!partnerId,
+  });
+
+  const totalPoints = products.reduce((s, p) => s + p.points, 0);
+  const totalProductos = products.length;
+  // Estimación simple: 1 canje por cada 5000 pts disponibles en catálogo
+  const canjesEstimados = totalPoints > 0 ? Math.max(1, Math.floor(totalPoints / 5000)) : 0;
+
 
   return (
     <div className="p-6 md:p-10 max-w-6xl mx-auto space-y-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Hola, {company.name} 👋</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Hola, {companyName} 👋</h1>
         <p className="text-muted-foreground mt-1">
           Este es el resumen de tu actividad en el portal de aliados.
         </p>
       </div>
 
       <div className="grid sm:grid-cols-3 gap-4">
-        <StatCard icon={<Package />} label="Productos publicados" value={products.length} />
+        <StatCard
+          icon={<Package />}
+          label="Productos publicados"
+          value={isLoading ? <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /> : totalProductos}
+        />
         <StatCard
           icon={<Coins />}
           label="Puntos canjeables (total)"
-          value={products.reduce((s, p) => s + p.points, 0).toLocaleString()}
+          value={isLoading ? <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /> : totalPoints.toLocaleString()}
         />
         <StatCard
           icon={<TrendingUp />}
           label="Canjes estimados (mes)"
-          value={Math.floor(totalPoints / 5000)}
+          value={isLoading ? <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /> : canjesEstimados}
         />
       </div>
 
