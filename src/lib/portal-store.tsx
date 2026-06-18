@@ -38,47 +38,18 @@ type Ctx = {
 };
 
 const defaultCompany: Company = {
-  name: "Cafetería USIL",
-  tagline: "Sabor sostenible para la comunidad USIL",
-  description:
-    "Aliado oficial Recipe dentro del campus USIL. Canjea tus puntos por bebidas, snacks y productos sostenibles directamente en nuestros puntos dentro del campus USIL.",
+  name: "",
+  tagline: "",
+  description: "",
   logo: "",
   cover: "",
   brandColor: "#2f7d4f",
-  category: "Cafetería USIL",
-  email: "aliados@usil.edu.pe",
-  website: "https://usil.edu.pe",
+  category: "",
+  email: "",
+  website: "",
 };
 
-const defaultProducts: Product[] = [
-  {
-    id: "p1",
-    name: "Botella Recipe USIL 750ml",
-    description: "Acero inoxidable con branding USIL. Mantiene la temperatura 12h.",
-    points: 1200,
-    stock: 24,
-    image: "",
-    category: "Campus",
-  },
-  {
-    id: "p2",
-    name: "Cupón 20% en café del campus",
-    description: "Válido en cualquier cafetería USIL presentando tu carnet.",
-    points: 600,
-    stock: 100,
-    image: "",
-    category: "Cupones",
-  },
-  {
-    id: "p3",
-    name: "Bolsa de tela ecológica",
-    description: "Algodón 100% orgánico, resistente hasta 10kg.",
-    points: 400,
-    stock: 50,
-    image: "",
-    category: "Hogar",
-  },
-];
+const defaultProducts: Product[] = [];
 
 const PortalCtx = createContext<Ctx | null>(null);
 const KEY = "portal-aliados-v1";

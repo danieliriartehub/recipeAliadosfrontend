@@ -36,7 +36,6 @@ async function silentRefresh(): Promise<string | null> {
       refresh_token: 'dummy-refresh-token',
     })
     setAccessToken(data.access_token)
-    console.log('[RECIPE] Token refrescado via /refresh')
     return data.access_token
   } catch (err) {
     // Cookie expirada o revocada → sin sesión activa

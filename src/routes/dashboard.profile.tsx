@@ -67,10 +67,6 @@ function ProfilePage() {
 
   const partner = data?.merchant_partners;
 
-  // Add debug logs
-  console.log("Context partner:", merchantPartner);
-  console.log("Query status:", { isFetching, isError, data });
-  console.log("Partner data to load:", partner);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
