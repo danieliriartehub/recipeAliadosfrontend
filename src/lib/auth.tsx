@@ -25,28 +25,46 @@ const REFRESH_INTERVAL_MS = 55 * 60 * 1000
 // Llama al backend para obtener un nuevo access_token usando la cookie HttpOnly.
 // credentials: 'include' en backendApi garantiza que la cookie se adjunte.
 
-async function silentRefresh(): Promise<string | null> {
-  try {
-    const data = await backendApi.post<RefreshResponse>('/api/v1/auth/refresh')
-    // Sincronizar el cliente Supabase con el nuevo token (solo en memoria).
-    // El refresh_token real está en la cookie HttpOnly — usamos un placeholder
-    // requerido por el SDK de supabase-js.
-    await supabase.auth.setSession({
-      access_token:  data.access_token,
-      refresh_token: 'dummy-refresh-token',
-    })
-    setAccessToken(data.access_token)
-    return data.access_token
-  } catch (err) {
-    // Cookie expirada o revocada → sin sesión activa
-    console.warn('[RECIPE] silentRefresh falló:', (err as Error).message)
-    return null
-  }
+let _refreshPromise: Promise<string | null> | null = null
+
+export async function silentRefresh(): Promise<string | null> {
+  if (_refreshPromise) return _refreshPromise
+
+  _refreshPromise = (async () => {
+    try {
+      const data = await backendApi.post<RefreshResponse>('/api/v1/auth/refresh')
+      // Sincronizar el cliente Supabase con el nuevo token (solo en memoria).
+      await supabase.auth.setSession({
+        access_token:  data.access_token,
+        refresh_token: 'dummy-refresh-token',
+      })
+      setAccessToken(data.access_token)
+      return data.access_token
+    } catch (err) {
+      // Cookie expirada o revocada → sin sesión activa
+      console.warn('[RECIPE] silentRefresh falló:', (err as Error).message)
+      return null
+    } finally {
+      _refreshPromise = null
+    }
+  })()
+
+  return _refreshPromise
 }
 
 // ─── Roles ───────────────────────────────────────────────────────────────────
 
 export type UserRole = 'aliado' | 'operador' | null
+
+export interface WhoamiResponse {
+  role: 'aliado' | 'operador'
+  id: string
+  email?: string | null
+  full_name?: string
+  center_id?: string
+  merchant_partner_id?: string
+  merchant_partners?: any | null
+}
 
 /**
  * Determina el rol del usuario consultando /api/v1/aliados/whoami.
@@ -57,7 +75,7 @@ export async function getUserRole(_userId: string): Promise<UserRole> {
   const token = getAccessToken()
   if (!token) return null
   try {
-    const data = await backendApi.withToken(token).get<any>('/api/v1/aliados/whoami')
+    const data = await backendApi.withToken(token).get<WhoamiResponse>('/api/v1/aliados/whoami')
     return data?.role ?? null
   } catch {
     return null
