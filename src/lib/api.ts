@@ -1,12 +1,13 @@
-import { getAccessToken } from './auth'
+import { getAccessToken, silentRefresh } from './auth'
 import { backendApi } from './backendApi'
 
 // ─── Helper: obtener token activo ─────────────────────────────────────────────
-// Usa el access_token en memoria (nunca localStorage). Si no existe, el usuario
-// no está autenticado — el MerchantAuthProvider debería haberlo redirigido.
+// Usa el access_token en memoria (nunca localStorage). Si no existe, intenta
+// refrescarlo silenciosamente (ALTO-8).
 
-function getToken(): string {
-  const token = getAccessToken()
+async function getToken(): Promise<string> {
+  let token = getAccessToken()
+  if (!token) token = await silentRefresh()
   if (!token) throw new Error('No autenticado')
   return token
 }
@@ -115,7 +116,7 @@ export async function addDeliveryItem(
 }
 
 export async function removeDeliveryItem(sessionId: string, itemId: string) {
-  const token = getToken()
+  const token = await getToken()
   return backendApi.withToken(token).post<unknown>('/api/v1/aliados/operator/delivery-session/item/remove', {
     session_id: sessionId,
     item_id: itemId,
