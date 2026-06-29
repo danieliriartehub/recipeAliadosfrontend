@@ -9,7 +9,6 @@ import {
   LayoutDashboard,
   Package,
   Store,
-  Smartphone,
   LogOut,
   Recycle,
   Menu,

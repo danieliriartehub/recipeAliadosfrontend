@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Megaphone, Image as ImageIcon, Upload, X, Trash2, Link as LinkIcon } from 'lucide-react'
 import { toast } from 'sonner'
-import { usePortal } from '@/lib/portal-store'
 
 export const Route = createFileRoute('/dashboard/ads')({
   head: () => ({ meta: [{ title: 'Publicidad — Portal de Aliados' }] }),
