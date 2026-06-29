@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { Leaf, Package, Smartphone, Sparkles, ArrowRight, Recycle, Globe } from "lucide-react";
+import { Leaf, Package, Smartphone, Sparkles, Recycle } from "lucide-react";
 
 export const Route = createFileRoute("/landing-aliados")({
   head: () => ({

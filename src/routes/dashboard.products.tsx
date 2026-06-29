@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Coins, Package, ImageIcon, Leaf, UploadCloud, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Coins, Package, Leaf, UploadCloud, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
