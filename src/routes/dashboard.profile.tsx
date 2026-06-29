@@ -114,7 +114,8 @@ function ProfilePage() {
       logo: currentValues.logo_url || "",
       cover: currentValues.banner_url || "",
     });
-  }, [currentValues, updateCompany]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(currentValues)]);
 
   const mutation = useMutation({
     mutationFn: (values: ProfileFormValues) => updateMerchantPartner(values),
