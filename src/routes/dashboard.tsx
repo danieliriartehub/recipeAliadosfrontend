@@ -54,6 +54,7 @@ function DashboardLayout() {
         website: merchantPartner.website_url || "",
       });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [merchantPartner]);
 
   // Verificar sesión y rol al montar
